@@ -10,7 +10,9 @@ meta {
   name: Get User
   type: http
   seq: 1
-  tags: [smoke]
+  tags: [
+    smoke
+  ]
 }
 
 get {
@@ -53,6 +55,10 @@ docs {
   Retrieve a single user by id.
 }
 ```
+
+**Tags use the multi-line list form above.** A one-line `tags: [smoke]` parses
+as the string `"[smoke]"`, so `--tags` and `--exclude-tags` silently ignore the
+request.
 
 ## Collection-level auth — collection.bru
 
@@ -117,4 +123,64 @@ A file can hold multiple `example { }` blocks — one per distinct response case
 `mode`/`body:json` for a request body); `response.body.content` is a multiline
 string (`'''…'''`) holding the literal JSON text.
 
+### Inside `request:`, every section is a block
+
+Each nested section of `example.request` is `name: { … }`: a colon, then a
+block. Bodies too: `body:text: { … }`, not `body:text: '''…'''`. A wrong form
+doesn't fail the file — the request still loads and runs, the example comes
+back empty (no name, no response), and the only signal is an
+`Error parsing example content` line on stderr.
+
+```bru
+example {
+  name: Created with a note
+  description: Code-derived from NotesController.create
+
+  request: {
+    url: {{baseUrl}}/users/:id/notes?notify=true
+    method: post
+    mode: text
+    params:path: {
+      id: 1
+    }
+    params:query: {
+      notify: true
+    }
+    headers: {
+      Content-Type: text/plain
+    }
+    body:text: {
+      Remember to call back.
+    }
+  }
+
+  response: {
+    headers: {
+      Content-Type: application/json
+    }
+    status: {
+      code: 201
+      text: Created
+    }
+    body: {
+      type: json
+      content: '''
+        {"id": 7, "note": "Remember to call back."}
+      '''
+    }
+  }
+}
+```
+
+`mode:` takes the method block's `body:` value (`json`, `text`,
+`multipartForm`, `formUrlEncoded`, …). A body section is the top-level body
+block's name plus a colon: `body:json: { … }`, `body:text: { … }`,
+`body:multipart-form: { … }`, `body:form-urlencoded: { … }`. Upload example:
+`references/multipart.md`.
+
 When to fill them, and with what: `references/capture.md`.
+
+## Whitespace
+
+Blank lines inside blocks may be unindented; both forms parse to the same
+value, so don't spend a pass re-indenting them.
