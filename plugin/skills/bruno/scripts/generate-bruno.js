@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { readFileSync, mkdirSync, writeFileSync, existsSync } from "node:fs";
+import { readFileSync, mkdirSync, writeFileSync, existsSync, realpathSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -69,8 +69,15 @@ export function renderRequest(route, seq, manifest = {}) {
   if (route.tags && route.tags.length) L.push(`  tags: [${route.tags.join(", ")}]`);
   L.push("}", "");
 
+  // bru run sends the url: line as written; params:query is only a mirror the
+  // GUI keeps in sync. Put every query param on the url or it is never sent.
+  // ponytail: values are written raw (no encoding), same as params:query.
+  const query = Object.entries(route.query || {});
+  const qs = query.length
+    ? (String(route.path).includes("?") ? "&" : "?") + query.map(([k, v]) => `${k}=${v}`).join("&")
+    : "";
   L.push(`${method} {`);
-  L.push(`  url: {{baseUrl}}${route.path}`);
+  L.push(`  url: {{baseUrl}}${route.path}${qs}`);
   L.push(`  body: ${hasBody ? "json" : "none"}`);
   L.push(`  auth: ${auth}`);
   L.push("}", "");
@@ -88,9 +95,9 @@ export function renderRequest(route, seq, manifest = {}) {
     L.push("}", "");
   }
 
-  if (route.query && Object.keys(route.query).length) {
+  if (query.length) {
     L.push("params:query {");
-    for (const [k, v] of Object.entries(route.query)) L.push(`  ${k}: ${v}`);
+    for (const [k, v] of query) L.push(`  ${k}: ${v}`);
     L.push("}", "");
   }
 
@@ -223,7 +230,7 @@ export function parseArgs(argv) {
 function main(argv) {
   const args = parseArgs(argv);
   if (args.help || !args.manifest || !args.out) {
-    console.log("Usage: node generate-bruno.mjs --manifest <path> --out <dir> [--force] [--dry-run]");
+    console.log("Usage: node generate-bruno.js --manifest <path> --out <dir> [--force] [--dry-run]");
     process.exit(args.help ? 0 : 1);
   }
   const manifest = JSON.parse(readFileSync(args.manifest, "utf8"));
@@ -235,5 +242,7 @@ function main(argv) {
   }
 }
 
-const isMain = process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];
+// realpath: Node resolves import.meta.url through symlinks but not argv[1], and
+// skills are usually installed as symlinked directories.
+const isMain = process.argv[1] && fileURLToPath(import.meta.url) === realpathSync(process.argv[1]);
 if (isMain) main(process.argv.slice(2));

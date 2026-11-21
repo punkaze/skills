@@ -4,10 +4,11 @@ import {
   slug, pathParams, resourceOf, groupRoutes, resolveAuth,
   renderRequest, renderEnvironment, renderBrunoJson, renderFolder,
   renderCollectionBru, buildCollection, writeCollection, parseArgs,
-} from "./generate-bruno.mjs";
+} from "./generate-bruno.js";
 import { mkdtempSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 // ---------- helpers ----------
 
@@ -55,6 +56,29 @@ test("renderRequest emits params:query, not legacy query", () => {
   assert.match(out, /params:query \{/);
   assert.doesNotMatch(out, /\nquery \{/);
   assert.match(out, /page: 1/);
+});
+
+// bru run sends only the url: line; params:query alone is never sent.
+test("renderRequest puts query params on the url line and mirrors them in params:query", () => {
+  const out = renderRequest(
+    { method: "GET", path: "/users/:id", name: "Get User", query: { expand: "profile", limit: 10 } },
+    1, {}
+  );
+  assert.match(out, /url: \{\{baseUrl\}\}\/users\/:id\?expand=profile&limit=10\n/);
+  assert.match(out, /params:query \{\n {2}expand: profile\n {2}limit: 10\n\}/);
+});
+
+test("renderRequest appends with & when the path already has a query", () => {
+  const out = renderRequest(
+    { method: "GET", path: "/search?type=user", name: "Search", query: { q: "{{term}}" } },
+    1, {}
+  );
+  assert.match(out, /url: \{\{baseUrl\}\}\/search\?type=user&q=\{\{term\}\}\n/);
+});
+
+test("renderRequest leaves the url alone without query params", () => {
+  const out = renderRequest({ method: "GET", path: "/users", name: "List" }, 1, {});
+  assert.match(out, /url: \{\{baseUrl\}\}\/users\n/);
 });
 
 test("renderRequest keeps :param in url and emits params:path", () => {
@@ -206,4 +230,23 @@ test("parseArgs reads flags", () => {
   assert.equal(a.out, "o");
   assert.equal(a.force, true);
   assert.equal(a.dryRun, false);
+});
+
+// Skills are usually installed as a symlinked directory (~/.claude/skills/x ->
+// ~/.agents/skills/x). Node resolves import.meta.url through the symlink but
+// not process.argv[1], so a naive "am I main?" check silently does nothing.
+test("CLI runs when invoked through a symlinked directory", async () => {
+  const { symlinkSync } = await import("node:fs");
+  const { execFileSync } = await import("node:child_process");
+  const here = dirname(fileURLToPath(import.meta.url));
+  const tmp = mkdtempSync(join(tmpdir(), "bruno-link-"));
+  symlinkSync(here, join(tmp, "scripts"), "dir");
+  const out = join(tmp, "out");
+  const stdout = execFileSync(process.execPath, [
+    join(tmp, "scripts", "generate-bruno.js"),
+    "--manifest", join(here, "..", "references", "sample-manifest.json"),
+    "--out", out,
+  ], { encoding: "utf8" });
+  assert.match(stdout, /wrote \d+ file\(s\)/);
+  assert.ok(existsSync(join(out, "bruno.json")));
 });

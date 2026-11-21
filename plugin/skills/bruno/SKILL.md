@@ -1,20 +1,18 @@
 ---
 name: bruno
-description: >-
-  Bruno, the Git-friendly API client, and its CLI (bru). Use when authoring or
-  editing .bru requests/collections, generating a collection from an OpenAPI
-  spec or a codebase's routes, writing Bruno tests or scripts, managing
-  environments and secrets, or running collections with `bru run` (local or CI).
+description: "Bruno, the Git-friendly API client, and its CLI (bru). Use when authoring or editing .bru requests/collections, generating a collection from an OpenAPI spec or a codebase's routes, writing Bruno tests or scripts, managing environments and secrets, or running collections with `bru run` (local or CI)."
 metadata:
   author: piyawat
-  version: "1.2.0"
+  version: "1.2.1"
   tags: ["api-client", "bruno", "bru", "http", "testing", "ci"]
 ---
 
 # Bruno — Author, Generate, and Run .bru Collections
 
 Requires the Bruno CLI: `npm install -g @usebruno/cli`. Everything below is
-verified against **bru 3.5.0** (`bru --version`).
+verified against **bru 3.5.0** (`bru --version`). The bundled generator needs
+Node.js 18+. Paths to `scripts/` and `references/` below are
+relative to this skill's base directory.
 
 ## Generating a collection — two paths
 
@@ -29,14 +27,27 @@ bru import openapi -s <spec.yaml|url> -o <out-dir> -n "My API" --collection-form
 `--collection-format bru` is required — the CLI default (`opencollection`)
 emits `.yml` files, not a `.bru` collection. `-g` picks folder grouping: `path`
 (by URL structure, usually what you want) or `tags` (by OpenAPI tags, the CLI
-default). **Done when** `<out-dir>` contains `bruno.json` and `.bru` files; an
-`opencollection.yml` there means the format flag was dropped.
+default).
+
+**Then fix query params — the import drops them.** `bru import` writes query
+params only into `params:query` and leaves them off the `url:` line, so
+`bru run` never sends them (see the `url:` rule under `.bru` syntax). For every
+imported request with a `params:query` block, append its enabled entries to
+`url:` (`?k=v&…`). This lists the files still missing them:
+
+```bash
+grep -rL --include='*.bru' -E '^\s+url: .*\?' <out-dir> | xargs grep -l '^params:query {'
+```
+
+**Done when** `<out-dir>` contains `bruno.json` and `.bru` files (an
+`opencollection.yml` there means the format flag was dropped) and the check
+above prints nothing.
 
 **Path B — no spec.** Read the codebase and write a **routes manifest** (shape
 below), then run the bundled generator:
 
 ```bash
-node "${CLAUDE_PLUGIN_ROOT}/skills/bruno/scripts/generate-bruno.mjs" --manifest routes.json --out ./api-collection
+node "<skill-dir>/scripts/generate-bruno.js" --manifest routes.json --out ./api-collection
 ```
 
 Flags: `--force` (overwrite existing files), `--dry-run` (preview, write
@@ -47,8 +58,8 @@ the output dir executes every request.
 
 ### Routes manifest
 
-Schema: `${CLAUDE_PLUGIN_ROOT}/skills/bruno/references/routes.schema.json` —
-full example: `${CLAUDE_PLUGIN_ROOT}/skills/bruno/references/sample-manifest.json`.
+Schema: `references/routes.schema.json` —
+full example: `references/sample-manifest.json`.
 
 ```json
 {
@@ -69,6 +80,8 @@ full example: `${CLAUDE_PLUGIN_ROOT}/skills/bruno/references/sample-manifest.jso
 - Route `auth`: `true` → `auth: inherit`, `false` → `none`, or an explicit
   `"bearer"|"basic"|"inherit"|"none"` per-request override.
 - Use `:param` in `path` for path params.
+- Route `query` is written onto the `url:` line (`?k=v&…`) and mirrored in
+  `params:query`.
 - `script: "token-capture"` adds a post-response script that captures
   `res.body.token` into the runtime variable `authToken`.
 - `tests` accepts `status-200`, `status-201`, `status-2xx`.
@@ -84,7 +97,7 @@ meta {
 }
 
 get {
-  url: {{baseUrl}}/users/:id
+  url: {{baseUrl}}/users/:id?expand=profile
   body: none
   auth: inherit
 }
@@ -125,6 +138,10 @@ docs {
 ```
 
 **Critical syntax rules (these were wrong in other community skills):**
+- **The `url:` line is what gets sent.** `bru run` sends the URL exactly as
+  written; `params:query` is only a mirror that the GUI keeps in sync, and a
+  param that exists only there is silently dropped. Put every enabled query
+  param on the URL (`?k=v&…`) and keep `params:query` matching it.
 - Query params use **`params:query { }`** — NOT legacy `query { }`.
 - Path params: keep **`:param` in the URL** and add a **`params:path { }`** block —
   do NOT substitute `{{param}}`.

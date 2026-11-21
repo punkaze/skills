@@ -59,7 +59,7 @@ Helps you work with [Bruno](https://www.usebruno.com/), the open-source, Git-fri
 
 What it can do:
 
-- **Author and edit `.bru` files** — requests, headers, `body:json`, post-response scripts, `tests`, and `docs` blocks, with the modern syntax agents usually get wrong: `params:query` (not legacy `query { }`), `:param` in the URL + `params:path` (not `{{param}}` substitution), and `auth: inherit` backed by collection-level auth in `collection.bru`.
+- **Author and edit `.bru` files** — requests, headers, `body:json`, post-response scripts, `tests`, and `docs` blocks, with the modern syntax agents usually get wrong: query params on the `url:` line (that is what `bru run` sends) mirrored in `params:query` (not legacy `query { }`), `:param` in the URL + `params:path` (not `{{param}}` substitution), and `auth: inherit` backed by collection-level auth in `collection.bru`.
 - **Generate a collection from an OpenAPI/Swagger spec** — `bru import openapi … --collection-format bru` (the flag matters: the CLI default emits opencollection `.yml` files, not a `.bru` collection).
 - **Generate a collection straight from code** — no spec needed. Describe the API as a routes manifest ([`routes.schema.json`](plugin/skills/bruno/references/routes.schema.json)); the bundled zero-dependency generator emits `bruno.json`, `collection.bru` with collection-level auth, per-resource folders, requests, environments, a login token-capture script, and status-code test presets.
 - **Write test and script blocks** — `test()`/`expect()` assertions, post-response scripts, and chaining values between requests (e.g. capture a login token, reuse it on later requests).
@@ -74,8 +74,9 @@ Skill contents live in [`plugin/skills/bruno/`](plugin/skills/bruno):
 plugin/skills/bruno/
 ├── SKILL.md
 ├── scripts/
-│   ├── generate-bruno.mjs        # the generator (zero deps)
-│   └── generate-bruno.test.mjs   # node:test suite
+│   ├── generate-bruno.js         # the generator (zero deps, Node 18+)
+│   ├── generate-bruno.test.js    # node:test suite
+│   └── package.json              # marks the scripts as ES modules
 └── references/
     ├── routes.schema.json        # manifest contract
     └── sample-manifest.json      # full manifest example
@@ -84,7 +85,7 @@ plugin/skills/bruno/
 ### Run the generator
 
 ```bash
-node plugin/skills/bruno/scripts/generate-bruno.mjs \
+node plugin/skills/bruno/scripts/generate-bruno.js \
   --manifest plugin/skills/bruno/references/sample-manifest.json \
   --out ./api-collection
 ```
@@ -92,7 +93,7 @@ node plugin/skills/bruno/scripts/generate-bruno.mjs \
 ### Run the tests
 
 ```bash
-node --test plugin/skills/bruno/scripts/generate-bruno.test.mjs
+node --test plugin/skills/bruno/scripts/generate-bruno.test.js
 ```
 
 ## The `hetzner-server-provision` skill
