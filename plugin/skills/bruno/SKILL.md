@@ -60,6 +60,8 @@ request. Manifest notes:
   mirrored in `params:query`.
 - `script: "token-capture"` stores `res.body.token` in the runtime variable
   `authToken`; `tests` takes `status-200`, `status-201`, `status-2xx`.
+- Each folder gets `meta { seq }` in the order its first route appears, so
+  list the login route first.
 
 ## Core rules
 
