@@ -27,8 +27,21 @@ bru import openapi -s <spec.yaml|url> -o <out-dir> -n "My API" --collection-form
 `--collection-format bru` is required — the CLI default (`opencollection`)
 emits `.yml` files, not a `.bru` collection. `-g` picks folder grouping: `path`
 (by URL structure, usually what you want) or `tags` (by OpenAPI tags, the CLI
-default). **Done when** `<out-dir>` contains `bruno.json` and `.bru` files; an
-`opencollection.yml` there means the format flag was dropped.
+default).
+
+**Then fix query params — the import drops them.** `bru import` writes query
+params only into `params:query` and leaves them off the `url:` line, so
+`bru run` never sends them (see the `url:` rule under `.bru` syntax). For every
+imported request with a `params:query` block, append its enabled entries to
+`url:` (`?k=v&…`). This lists the files still missing them:
+
+```bash
+grep -rL --include='*.bru' -E '^\s+url: .*\?' <out-dir> | xargs grep -l '^params:query {'
+```
+
+**Done when** `<out-dir>` contains `bruno.json` and `.bru` files (an
+`opencollection.yml` there means the format flag was dropped) and the check
+above prints nothing.
 
 **Path B — no spec.** Read the codebase and write a **routes manifest** (shape
 below), then run the bundled generator:
