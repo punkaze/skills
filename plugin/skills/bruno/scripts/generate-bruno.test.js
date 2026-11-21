@@ -4,7 +4,7 @@ import {
   slug, pathParams, resourceOf, groupRoutes, resolveAuth,
   renderRequest, renderEnvironment, renderBrunoJson, renderFolder,
   renderCollectionBru, buildCollection, writeCollection, parseArgs,
-} from "./generate-bruno.mjs";
+} from "./generate-bruno.js";
 import { mkdtempSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -55,6 +55,29 @@ test("renderRequest emits params:query, not legacy query", () => {
   assert.match(out, /params:query \{/);
   assert.doesNotMatch(out, /\nquery \{/);
   assert.match(out, /page: 1/);
+});
+
+// bru run sends only the url: line; params:query alone is never sent.
+test("renderRequest puts query params on the url line and mirrors them in params:query", () => {
+  const out = renderRequest(
+    { method: "GET", path: "/users/:id", name: "Get User", query: { expand: "profile", limit: 10 } },
+    1, {}
+  );
+  assert.match(out, /url: \{\{baseUrl\}\}\/users\/:id\?expand=profile&limit=10\n/);
+  assert.match(out, /params:query \{\n {2}expand: profile\n {2}limit: 10\n\}/);
+});
+
+test("renderRequest appends with & when the path already has a query", () => {
+  const out = renderRequest(
+    { method: "GET", path: "/search?type=user", name: "Search", query: { q: "{{term}}" } },
+    1, {}
+  );
+  assert.match(out, /url: \{\{baseUrl\}\}\/search\?type=user&q=\{\{term\}\}\n/);
+});
+
+test("renderRequest leaves the url alone without query params", () => {
+  const out = renderRequest({ method: "GET", path: "/users", name: "List" }, 1, {});
+  assert.match(out, /url: \{\{baseUrl\}\}\/users\n/);
 });
 
 test("renderRequest keeps :param in url and emits params:path", () => {
