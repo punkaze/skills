@@ -113,9 +113,10 @@ test("renderRequest emits body:json + Content-Type for POST with body", () => {
 test("renderRequest emits meta tags, token-capture script, and test presets", () => {
   const out = renderRequest(
     { method: "POST", path: "/auth/login", name: "Login", body: { email: "" },
-      tags: ["smoke"], script: "token-capture", tests: ["status-200"] }, 1, {}
+      tags: ["smoke", "auth"], script: "token-capture", tests: ["status-200"] }, 1, {}
   );
-  assert.match(out, /tags: \[smoke\]/);
+  // A one-line `tags: [a, b]` parses as a string, which --tags ignores.
+  assert.match(out, /\n {2}tags: \[\n {4}smoke\n {4}auth\n {2}\]\n\}/);
   assert.match(out, /script:post-response \{/);
   assert.match(out, /bru\.setVar\("authToken", res\.body\.token\)/);
   assert.doesNotMatch(out, /setEnvVar/);
