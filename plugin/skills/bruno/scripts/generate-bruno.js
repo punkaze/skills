@@ -66,7 +66,9 @@ export function renderRequest(route, seq, manifest = {}) {
   L.push(`  name: ${route.name}`);
   L.push("  type: http");
   L.push(`  seq: ${seq}`);
-  if (route.tags && route.tags.length) L.push(`  tags: [${route.tags.join(", ")}]`);
+  // One-line `tags: [a, b]` parses as the string "[a, b]", which --tags and
+  // --exclude-tags ignore. Bruno reads only the multi-line list form.
+  if (route.tags && route.tags.length) L.push("  tags: [", ...route.tags.map((t) => `    ${t}`), "  ]");
   L.push("}", "");
 
   // bru run sends the url: line as written; params:query is only a mirror the
@@ -157,8 +159,8 @@ export function renderBrunoJson(manifest) {
   return JSON.stringify(obj, null, 2) + "\n";
 }
 
-export function renderFolder(name) {
-  return `meta {\n  name: ${cap(name)}\n}\n`;
+export function renderFolder(name, seq) {
+  return `meta {\n  name: ${cap(name)}\n  seq: ${seq}\n}\n`;
 }
 
 // collection.bru at the root is what `auth: inherit` in child requests
@@ -184,11 +186,16 @@ export function buildCollection(manifest) {
   for (const env of manifest.environments || []) {
     files[`environments/${env.name}.bru`] = renderEnvironment(env);
   }
-  const groups = groupRoutes(manifest.routes || []);
-  for (const [resource, routes] of Object.entries(groups)) {
-    files[`${resource}/folder.bru`] = renderFolder(resource);
+  const routes = manifest.routes || [];
+  const groups = groupRoutes(routes);
+  // bru run orders folders alphabetically unless folder.bru has meta { seq }.
+  // A Set keeps first-appearance order; Object.entries(groups) would move
+  // integer-like folder names ("2024") to the front.
+  let folderSeq = 1;
+  for (const resource of new Set(routes.map(resourceOf))) {
+    files[`${resource}/folder.bru`] = renderFolder(resource, folderSeq++);
     let seq = 1;
-    for (const r of routes) {
+    for (const r of groups[resource]) {
       files[`${resource}/${slug(r.name)}.bru`] = renderRequest(r, seq++, manifest);
     }
   }

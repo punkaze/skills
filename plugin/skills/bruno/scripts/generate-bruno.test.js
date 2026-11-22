@@ -113,9 +113,10 @@ test("renderRequest emits body:json + Content-Type for POST with body", () => {
 test("renderRequest emits meta tags, token-capture script, and test presets", () => {
   const out = renderRequest(
     { method: "POST", path: "/auth/login", name: "Login", body: { email: "" },
-      tags: ["smoke"], script: "token-capture", tests: ["status-200"] }, 1, {}
+      tags: ["smoke", "auth"], script: "token-capture", tests: ["status-200"] }, 1, {}
   );
-  assert.match(out, /tags: \[smoke\]/);
+  // A one-line `tags: [a, b]` parses as a string, which --tags ignores.
+  assert.match(out, /\n {2}tags: \[\n {4}smoke\n {4}auth\n {2}\]\n\}/);
   assert.match(out, /script:post-response \{/);
   assert.match(out, /bru\.setVar\("authToken", res\.body\.token\)/);
   assert.doesNotMatch(out, /setEnvVar/);
@@ -145,8 +146,8 @@ test("renderBrunoJson omits ignore unless provided", () => {
   assert.match(b, /"ignore"/);
 });
 
-test("renderFolder capitalizes name", () => {
-  assert.match(renderFolder("users"), /meta \{\n {2}name: Users\n\}/);
+test("renderFolder writes name and seq", () => {
+  assert.equal(renderFolder("users", 2), "meta {\n  name: Users\n  seq: 2\n}\n");
 });
 
 // ---------- collection.bru ----------
@@ -194,6 +195,23 @@ test("buildCollection returns expected file map", () => {
   assert.ok(keys.includes("auth/login.bru"));
   assert.ok(keys.includes("users/folder.bru"));
   assert.ok(keys.includes("users/get-user.bru"));
+});
+
+// bru run orders folders alphabetically unless folder.bru has meta { seq }.
+test("buildCollection numbers folders in order of each resource's first route", () => {
+  const files = buildCollection({
+    name: "Order", baseUrl: "http://localhost:3000",
+    routes: [
+      { method: "POST", path: "/session/login", name: "Login" },
+      { method: "GET", path: "/accounts", name: "List Accounts" },
+      { method: "POST", path: "/session/logout", name: "Logout" },
+      { method: "GET", path: "/2024/report", name: "Report" },
+    ],
+  });
+  assert.match(files["session/folder.bru"], /\n {2}seq: 1\n/);
+  assert.match(files["accounts/folder.bru"], /\n {2}seq: 2\n/);
+  assert.match(files["2024/folder.bru"], /\n {2}seq: 3\n/);
+  assert.match(files["session/logout.bru"], /\n {2}seq: 2\n/);
 });
 
 test("writeCollection writes, then is idempotent without --force", () => {
