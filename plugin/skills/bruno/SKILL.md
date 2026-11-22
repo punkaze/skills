@@ -80,7 +80,7 @@ request. Manifest notes:
   `auth:bearer` / `auth:basic` blocks only for a per-request override.
 - **Green means nothing was skipped.** `bru run` skips a file it can't parse,
   warns on stderr, and still reports `✓ PASS` with exit 0, even with `--bail`.
-  Pass = no `Skipped` in the summary and the grep below prints `0`.
+  Pass = no `Skipped` in the summary; the check below is silent.
 
 ## Running with `bru run`
 
@@ -95,9 +95,9 @@ bru run . -r --env dev --env-var token=$TOK       # override one var from shell 
 bru run . -r --reporter-junit results.xml --reporter-html report.html
 bru run . -r --bail --tests-only                  # CI: stop on first failure, only requests with tests
 bru run . -r --csv-file-path data.csv --parallel  # data-driven, parallel iterations
-bru run . -r --tags smoke --exclude-tags wip      # meta tags, multi-line form only (syntax.md)
-bru run . -r --env dev 2>&1 | tee /tmp/bru-run.log
-grep -cE 'Skipping invalid file|Error parsing example content' /tmp/bru-run.log  # must print 0
+bru run . -r --tags smoke --exclude-tags wip      # meta tags, multi-line form only (references/syntax.md)
+bru run . -r --env dev > /tmp/bru-run.log 2>&1
+! grep -E 'Skipping invalid file|Error parsing example content' /tmp/bru-run.log
 ```
 
 `--env` takes the environment's file name without `.bru`; quote names with

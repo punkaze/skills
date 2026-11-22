@@ -61,7 +61,10 @@ instead of copying the values into a second `.env`:
 (set -a; . ../.env.local; set +a; bru run . -r --env dev)
 ```
 
-The subshell keeps the values out of your interactive shell.
+The subshell keeps the values out of your interactive shell. `.` sources the
+file as shell, not as plain key-value pairs: only do this for a trusted,
+plain `KEY=value` file, quote any value with a space or `$`, and know that a
+value containing `$(…)` or backticks executes.
 
 ## What the CLI masks in reports
 

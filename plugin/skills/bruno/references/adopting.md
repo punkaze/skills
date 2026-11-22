@@ -6,7 +6,10 @@ steps 2–7 print file names only, never values.
 
 ## 1. Nothing is skipped, every example parses
 
-Check the env's `baseUrl` points at a local or dev server first, and exclude
+Check the env's `baseUrl` points at a local or dev server first. Run step 4
+first and convert any one-line tags — `--exclude-tags` ignores those.
+Untagged DELETE/POST requests still run regardless, so look for them before
+running against anything but a throwaway local server. Then exclude
 destructive requests (`references/capture.md`):
 
 ```bash

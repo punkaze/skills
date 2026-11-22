@@ -55,7 +55,7 @@ claude --plugin-dir ./skills/plugin
 
 ## The `bruno` skill
 
-Helps you work with [Bruno](https://www.usebruno.com/), the open-source, Git-friendly API client, and its CLI (`bru`). Every command and syntax rule in the skill is verified against a real **bru 3.5.3** install; the few behaviors that couldn't be checked (parts of the Bruno app's WebSocket handling) are marked "unverified" in the text.
+Helps you work with [Bruno](https://www.usebruno.com/), the open-source, Git-friendly API client, and its CLI (`bru`). Every command and syntax rule in the skill is verified against a real **bru 3.5.3** install; the few behaviors that couldn't be checked (parts of the Bruno app's behavior, such as its WebSocket handling) are marked "unverified" in the text.
 
 What it can do:
 

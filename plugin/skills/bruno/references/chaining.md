@@ -44,7 +44,7 @@ Make consumers fail at the cause:
 
 ```bru
 script:pre-request {
-  if (!bru.getVar("orderId")) {
+  if (!bru.getVar("orderId") && !bru.getEnvVar("orderId")) {
     throw new Error("orderId is not set: run orders/create-order.bru first, in the same bru run");
   }
 }

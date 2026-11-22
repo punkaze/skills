@@ -7,6 +7,9 @@ meta {
   name: News Feed
   type: ws
   seq: 1
+  tags: [
+    ws
+  ]
 }
 
 ws {
@@ -40,7 +43,7 @@ parser; how the Bruno app sends the messages (order, timing) is **unverified**.
 `bru run` does not open WebSocket connections: a `type: ws` request goes
 through its HTTP client, fails with `Unsupported protocol ws:`, and fails the
 run. Tag WebSocket requests using the multi-line tag form described in
-`references/capture.md` and run collections with `--exclude-tags ws`; send
+`references/syntax.md` and run collections with `--exclude-tags ws`; send
 them from the Bruno app (**unverified** here).
 
 ## Socket.IO framing
