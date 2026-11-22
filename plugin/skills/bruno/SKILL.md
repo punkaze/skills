@@ -109,4 +109,5 @@ spaces: `--env "dev (local)"`.
 - `references/chaining.md` — requests that feed each other: order, `bru.setVar`, unset vars.
 - `references/secrets.md` — environments, `vars:secret`, `.env`, gitignore, leaks.
 - `references/sandbox.md` — `require()` in scripts, HMAC signing, `--sandbox developer`.
+- `references/multipart.md` — file uploads and form bodies.
 - `references/capture.md` — filling `example { }`: captured vs. code-derived, preflight.
