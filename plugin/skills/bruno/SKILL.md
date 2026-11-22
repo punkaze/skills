@@ -34,7 +34,7 @@ params only into `params:query` and leaves them off the `url:` line, so
 lists the files still missing them:
 
 ```bash
-grep -rL --include='*.bru' -E '^\s+url: .*\?' <out-dir> | xargs grep -l '^params:query {'
+grep -rL --null --include='*.bru' -E '^\s+url: .*\?' <out-dir> | xargs -0 grep -l '^params:query {'
 ```
 
 **Done when** `<out-dir>` contains `bruno.json` and `.bru` files (an

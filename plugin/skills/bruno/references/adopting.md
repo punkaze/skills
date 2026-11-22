@@ -1,20 +1,23 @@
 # Adopting an existing collection
 
 Run this checklist from the collection root before adding to a collection
-someone else built, and fix what each step finds first. Every command prints
-file names only, never values.
+someone else built, and fix what each step finds first. The grep checks in
+steps 2–7 print file names only, never values.
 
 ## 1. Nothing is skipped, every example parses
 
+Check the env's `baseUrl` points at a local or dev server first, and exclude
+destructive requests (`references/capture.md`):
+
 ```bash
-bru run . -r --env <env> 2>&1 | tee /tmp/bru-run.log
+bru run . -r --env <env> --exclude-tags destructive 2>&1 | tee /tmp/bru-run.log
 grep -nE 'Skipping invalid file|Error parsing example content' /tmp/bru-run.log
 ```
 
 ## 2. Query params are on the `url:` line
 
 ```bash
-grep -rL --include='*.bru' -E '^\s+url: .*\?' . | xargs grep -l '^params:query {'
+grep -rL --null --include='*.bru' -E '^\s+url: .*\?' . | xargs -0 grep -l '^params:query {'
 ```
 
 ## 3. No empty `@file()`

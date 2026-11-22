@@ -63,6 +63,8 @@ instead of copying the values into a second `.env`:
 
 The subshell keeps the values out of your interactive shell.
 
+## What the CLI masks in reports
+
 `--reporter-json` reports mask the `Authorization` and `X-Api-Key` headers
 (`Bearer ********`) and the values of `.env` entries and of `vars:secret` names
 passed with `--env-var`. They do not mask tokens inside response bodies, such
