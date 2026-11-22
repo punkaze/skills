@@ -29,7 +29,14 @@ application/json` turns this on even for `body:text`, so plain
 `req.getBody()` hands back a parsed object instead of the bytes that go over
 the wire, and `CryptoJS.HmacSHA256()` of that object won't match the
 signature the receiver computes from the raw request. Pass `{ raw: true }` to
-always get the literal string:
+get the literal string instead — verified for `body:text` and `body:json`.
+
+`{ raw: true }` still isn't the sent bytes if the body contains `{{vars}}`:
+Bruno interpolates variables into the request *after* the pre-request script
+runs, so `req.getBody({ raw: true })` returns the template with `{{var}}`
+still in it, and a signature over that template won't match the interpolated
+body that actually goes out. Keep a signed body literal — no `{{vars}}`
+inside it:
 
 ```bru
 meta {
@@ -59,6 +66,5 @@ script:pre-request {
 }
 ```
 
-With `body:json`, `req.getBody()` returns a parsed object, and re-serializing
-it may not reproduce the bytes sent. Don't sign a hand-copied string literal
-of the body either: it goes stale the first time someone edits the body.
+Don't sign a hand-copied string literal of the body either: it goes stale
+the first time someone edits the body.
