@@ -6,7 +6,7 @@ Currently ships six skills:
 
 | Skill | What it does |
 | :---- | :----------- |
-| **bruno** | Author, generate, and run [Bruno](https://www.usebruno.com/) `.bru` API collections — with a zero-dependency collection generator and `.bru`/CLI syntax verified against Bruno **3.5.0**. |
+| **bruno** | Author, generate, and run [Bruno](https://www.usebruno.com/) `.bru` API collections — with a zero-dependency collection generator and `.bru`/CLI syntax verified against Bruno **3.5.3**. |
 | **hetzner-server-provision** | Provision a [Hetzner Cloud](https://www.hetzner.com/cloud) server end-to-end via the `hcloud` CLI — pick type/location, create a firewall (SSH locked to your IP), boot the server, and install Docker + Nginx + Certbot on a hardened, key-only box. |
 | **worktree-setup** | Spin up isolated git worktree(s) for a task on any project — config-driven, deciding single vs dual/multi-repo scope (identical branch names on coupled repos), cutting from the right base branch, copying env files, and running the right install command. |
 | **free-disk-space** | Find what's safe to delete to reclaim disk space on macOS/Linux and hand you copy-paste cleanup commands, sorted by reclaimable size with a per-row safety flag. Read-only by default — it investigates and reports, never deleting anything on its own. |
@@ -55,16 +55,17 @@ claude --plugin-dir ./skills/plugin
 
 ## The `bruno` skill
 
-Helps you work with [Bruno](https://www.usebruno.com/), the open-source, Git-friendly API client, and its CLI (`bru`). Every command and syntax rule in the skill is verified against a real **bru 3.5.0** install.
+Helps you work with [Bruno](https://www.usebruno.com/), the open-source, Git-friendly API client, and its CLI (`bru`). Every command and syntax rule in the skill is verified against a real **bru 3.5.3** install; the few behaviors that couldn't be checked (parts of the Bruno app's WebSocket handling) are marked "unverified" in the text.
 
 What it can do:
 
 - **Author and edit `.bru` files** — requests, headers, `body:json`, post-response scripts, `tests`, and `docs` blocks, with the modern syntax agents usually get wrong: query params on the `url:` line (that is what `bru run` sends) mirrored in `params:query` (not legacy `query { }`), `:param` in the URL + `params:path` (not `{{param}}` substitution), and `auth: inherit` backed by collection-level auth in `collection.bru`.
 - **Generate a collection from an OpenAPI/Swagger spec** — `bru import openapi … --collection-format bru` (the flag matters: the CLI default emits opencollection `.yml` files, not a `.bru` collection).
-- **Generate a collection straight from code** — no spec needed. Describe the API as a routes manifest ([`routes.schema.json`](plugin/skills/bruno/references/routes.schema.json)); the bundled zero-dependency generator emits `bruno.json`, `collection.bru` with collection-level auth, per-resource folders, requests, environments, a login token-capture script, and status-code test presets.
+- **Generate a collection straight from code** — no spec needed. Describe the API as a routes manifest ([`routes.schema.json`](plugin/skills/bruno/references/routes.schema.json)); the bundled zero-dependency generator emits `bruno.json`, `collection.bru` with collection-level auth, per-resource folders numbered with `seq` so `bru run` follows manifest order, requests, environments, a login token-capture script, and status-code test presets.
 - **Write test and script blocks** — `test()`/`expect()` assertions, post-response scripts, and chaining values between requests (e.g. capture a login token, reuse it on later requests).
-- **Manage environments and secrets safely** — environment `.bru` files, `vars:secret` (names on disk, never values), `bru.setVar` for runtime-only tokens, and `--env-var KEY=$SHELL_VAR` so secrets stay out of shell history.
+- **Manage environments and secrets safely** — environment `.bru` files, `vars:secret` (names on disk, never values), a gitignored `.env` for CLI runs, `**/` gitignore patterns checked with `git check-ignore`, `bru.setVar` for runtime-only tokens, and `--env-var KEY=$SHELL_VAR` so secrets stay out of shell history.
 - **Run collections locally or in CI** — `bru run` recipes: recursive runs, env selection/overrides, JUnit/HTML reporters, `--bail --tests-only` for CI gates, tag filtering, CSV/JSON data-driven iterations, and the `--sandbox safe` default explained.
+- **Topic references, loaded only when needed** — file uploads and form bodies, the safe script sandbox and HMAC signing, chaining requests (run order, unset variables), filling `example { }` blocks (captured vs. code-derived), Socket.IO over `type: ws`, and a checklist for adopting an existing collection. They cover the failures `bru run` doesn't report: an unparseable file is skipped and the run still passes.
 
 The generated auth chain is tested end-to-end against a live server: login → `bru.setVar("authToken")` → `{{authToken}}` in `collection.bru` → `auth: inherit` on child requests.
 
@@ -72,12 +73,20 @@ Skill contents live in [`plugin/skills/bruno/`](plugin/skills/bruno):
 
 ```
 plugin/skills/bruno/
-├── SKILL.md
+├── SKILL.md                      # core rules, the two generation paths, routing
 ├── scripts/
 │   ├── generate-bruno.js         # the generator (zero deps, Node 18+)
 │   ├── generate-bruno.test.js    # node:test suite
 │   └── package.json              # marks the scripts as ES modules
 └── references/
+    ├── syntax.md                 # full .bru syntax, collection.bru auth, example { } grammar
+    ├── chaining.md               # run order, bru.setVar, unset {{vars}}
+    ├── secrets.md                # environments, vars:secret, .env, gitignore, leaks
+    ├── sandbox.md                # safe-sandbox require() table, HMAC signing
+    ├── multipart.md              # file uploads and form bodies
+    ├── capture.md                # captured vs. code-derived examples, preflight
+    ├── websocket.md              # type: ws requests, Socket.IO framing
+    ├── adopting.md               # checklist for an existing collection
     ├── routes.schema.json        # manifest contract
     └── sample-manifest.json      # full manifest example
 ```

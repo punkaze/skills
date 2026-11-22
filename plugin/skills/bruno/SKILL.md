@@ -3,7 +3,7 @@ name: bruno
 description: "Bruno, the Git-friendly API client, and its CLI (bru). Use when authoring or editing .bru requests/collections, generating a collection from an OpenAPI spec or a codebase's routes, writing Bruno tests or scripts, managing environments and secrets, or running collections with `bru run` (local or CI)."
 metadata:
   author: piyawat
-  version: "1.2.1"
+  version: "1.3.0"
   tags: ["api-client", "bruno", "bru", "http", "testing", "ci"]
 ---
 
@@ -11,7 +11,7 @@ metadata:
 
 Requires the Bruno CLI: `npm install -g @usebruno/cli`, or the project's own
 devDependency via `npx --no-install bru …` when it pins one. Verified against
-**bru 3.5.0** (`bru --version`). The generator needs Node.js 18+. Paths to
+**bru 3.5.3** (`bru --version`). The generator needs Node.js 18+. Paths to
 `scripts/` and `references/` are relative to this skill's base directory.
 
 ## Generating a collection — two paths
