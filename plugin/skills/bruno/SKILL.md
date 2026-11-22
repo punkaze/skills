@@ -111,4 +111,5 @@ spaces: `--env "dev (local)"`.
 - `references/sandbox.md` — `require()` in scripts, HMAC signing, `--sandbox developer`.
 - `references/multipart.md` — file uploads and form bodies.
 - `references/capture.md` — filling `example { }`: captured vs. code-derived, preflight.
+- `references/websocket.md` — `type: ws` requests, Socket.IO servers.
 - `references/adopting.md` — taking over an existing collection.
