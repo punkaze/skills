@@ -97,7 +97,7 @@ bru run . -r --bail --tests-only                  # CI: stop on first failure, o
 bru run . -r --csv-file-path data.csv --parallel  # data-driven, parallel iterations
 bru run . -r --tags smoke --exclude-tags wip      # meta tags, multi-line form only (references/syntax.md)
 bru run . -r --env dev > /tmp/bru-run.log 2>&1
-! grep -E 'Skipping invalid file|Error parsing example content' /tmp/bru-run.log
+if grep -E 'Skipping invalid file|Error parsing example content' /tmp/bru-run.log; then false; fi
 ```
 
 `--env` takes the environment's file name without `.bru`; quote names with
